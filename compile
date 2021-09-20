@@ -1,0 +1,2 @@
+#!/bin/bash
+as -g -o caesar.o caesar.s && ld -o caesar caesar.o
