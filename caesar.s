@@ -14,7 +14,8 @@
 	.comm ShiftKeyPointer, 4
 	.comm ShiftKeyLength, 4
 
-
+	.comm ShiftKeyInteger, 4
+	.comm ShiftKeySize, 4	
 
 .text
 
@@ -50,6 +51,27 @@
 		movl $ShiftKeyPointer, %ecx
 		movl $ShiftKeyLength, %edx
 		int $0x80
+		
+		movl $0x0, %ecx
+		movl $ShiftKeyPointer, %esi
+	findEnd:
+		lodsb    # into %al
+		cmp $0x0a, %al
+		jz done
+		
+		inc %ecx
+		jmp findEnd 
+
+	done:
+		dec %esi  # off by one 
+		std  # change direction
+		lodsb  # skip over newline
+
+	convertInt:
+		lodsb   # into %al
+		dec %ecx
+		cmp $0x0, %ecx
+		jnz convertInt 
 
 		# call CaesarCipher
 
