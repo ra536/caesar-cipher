@@ -10,6 +10,12 @@
 	# shift key prompt
 	# shift key prompt length
 
+.bss
+	.comm ShiftKeyPointer, 4
+	.comm ShiftKeyLength, 4
+
+
+
 .text
 
         .globl _start
@@ -33,6 +39,17 @@
 
 		# read system call for shift key
 		# push shift key to stack
+		movl $3, %eax
+		movl $0x0,  %ebx
+		movl $ShiftKeyPointer, %ecx
+		movl $ShiftKeyLength, %edx
+		int $0x80
+			
+		movl $4, %eax
+		movl $1, %ebx
+		movl $ShiftKeyPointer, %ecx
+		movl $ShiftKeyLength, %edx
+		int $0x80
 
 		# call CaesarCipher
 
