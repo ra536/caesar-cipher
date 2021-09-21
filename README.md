@@ -3,7 +3,7 @@
 ## Setup
 To clone this project, run:
 ```bash
-git clone git@github.com:ra536/caesar-cipher.git`
+git clone git@github.com:ra536/caesar-cipher.git
 ```
 
 ## Extended Setup for Class
