@@ -16,3 +16,5 @@ From there, simply run
 ```bash
 ./caesar
 ```
+
+Contributors: Robert Argasinski, Alexander Cline, Nishaant Goswamy
