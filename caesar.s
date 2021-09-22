@@ -19,11 +19,14 @@
 		.int 0x0
 
 .bss
-	.comm PlaintextPointer, 4
+	.comm PlaintextPointer, 51
 	.comm PlaintextLength, 4	
 
 	.comm ShiftKeyPointer, 4
 	.comm ShiftKeyLength, 4
+
+	.comm CiphertextPointer, 51
+	.comm CiphertextLength, 4
 
 	.comm ShiftKeyInteger, 4
 	.comm ShiftKeySize, 4	
@@ -85,13 +88,6 @@
 		# includes newline
 		movl %eax, ShiftKeyLength
 			
-		# write system call (TODO: Delete)
-		movl $4, %eax
-		movl $1, %ebx
-		movl $ShiftKeyPointer, %ecx
-		movl ShiftKeyLength, %edx
-		int $0x80
-		
 		# set up counter and prep %esi for lodsb command
 		movl $0x0, %ecx
 		movl $ShiftKeyPointer, %esi
@@ -160,7 +156,70 @@
 		cmp $0x0, %ecx
 		jnz convertInt 
 
+	setup:
+		cld
+
 		# call CaesarCipher
+		movl $PlaintextPointer, %esi
+		movl PlaintextLength, %ecx
+		movl $CiphertextPointer, %edi
+		
+		# bring down Conversion...
+		movl Conversion, %ebx
+	modConversion:
+		cmp $26, %ebx
+		jb doneConversion 
+	
+	subConversion:
+		sub $26, %ebx
+		jmp modConversion
+
+	doneConversion:
+		movl %ebx, Conversion	
+
+	shiftLoop:
+		movl $0x0, %eax
+		lodsb
+		cmp $0x0a, %al
+		jz doneShift	
+		
+		# inc %ecx
+		
+		# compare with space
+		cmp $0x20, %al
+		jz store
+		
+		#SHIFT
+		sub $65, %al
+		add Conversion, %al	
+
+
+	modPlaintext:
+		cmp $26, %al
+		jb donePlaintext 
+	
+	subPlaintext:
+		sub $26, %al
+		jmp modPlaintext
+
+	donePlaintext:
+		add $65, %al
+		
+	store:
+		stosb	
+		jmp shiftLoop 
+
+	doneShift:
+		movl %ecx, CiphertextLength
+		mov $0x0a, %al
+		stosb
+		
+		# write system call 
+		movl $4, %eax
+		movl $1, %ebx
+		movl $CiphertextPointer, %ecx
+		movl CiphertextLength, %edx
+		int $0x80
 
 		# adjust stack pointer	
 
