@@ -1,14 +1,16 @@
 .data
 
-        HelloWorld:
-                .asciz "Hello World!\n"
-		lenHelloWorld = .-HelloWorld
-
 	# plaintext prompt
 	# plaintext prompt length
+	PlaintextPrompt:
+		.asciz "Please enter the plaintext: "
+		lenPlaintextPrompt = .-PlaintextPrompt
 
 	# shift key prompt
 	# shift key prompt length
+	ShiftKeyPrompt:
+		.asciz "Please enter the shift value: "
+		lenShiftKeyPrompt = .-ShiftKeyPrompt
 	
 	PowerOfTen:
 		.int 0x1
@@ -17,6 +19,9 @@
 		.int 0x0
 
 .bss
+	.comm PlaintextPointer, 4
+	.comm PlaintextLength, 4	
+
 	.comm ShiftKeyPointer, 4
 	.comm ShiftKeyLength, 4
 
@@ -44,8 +49,30 @@
 		ret
 
         _start:
+		# write system call 
+		movl $4, %eax
+		movl $1, %ebx
+		movl $PlaintextPrompt, %ecx
+		movl $lenPlaintextPrompt, %edx
+		int $0x80
+
 		# read system call for plaintext
 		# push plaintext to stack
+		movl $3, %eax
+		movl $0x0, %ebx
+		movl $PlaintextPointer, %ecx
+		movl $PlaintextLength, %edx
+		int $0x80
+
+		# includes newline
+		movl %eax, PlaintextLength
+
+		# write system call 
+		movl $4, %eax
+		movl $1, %ebx
+		movl $ShiftKeyPrompt, %ecx
+		movl $lenShiftKeyPrompt, %edx
+		int $0x80
 
 		# read system call for shift key
 		# push shift key to stack
@@ -54,12 +81,15 @@
 		movl $ShiftKeyPointer, %ecx
 		movl $ShiftKeyLength, %edx
 		int $0x80
+
+		# includes newline
+		movl %eax, ShiftKeyLength
 			
 		# write system call (TODO: Delete)
 		movl $4, %eax
 		movl $1, %ebx
 		movl $ShiftKeyPointer, %ecx
-		movl $ShiftKeyLength, %edx
+		movl ShiftKeyLength, %edx
 		int $0x80
 		
 		# set up counter and prep %esi for lodsb command
@@ -134,13 +164,6 @@
 
 		# adjust stack pointer	
 
-	
-		# Hello World Example
-                movl $4, %eax
-                movl $1, %ebx
-                movl $HelloWorld, %ecx
-                movl $lenHelloWorld, %edx
-                int $0x80		
 
 		# Quit
                 movl $1, %eax
