@@ -9,6 +9,15 @@
 
 	# shift key prompt
 	# shift key prompt length
+	
+	LiterallyTen:
+		.int 10
+
+	PowerOfTen:
+		.int 0x1
+
+	Conversion:
+		.int 0x0
 
 .bss
 	.comm ShiftKeyPointer, 4
@@ -16,6 +25,8 @@
 
 	.comm ShiftKeyInteger, 4
 	.comm ShiftKeySize, 4	
+
+	.comm ConversionLength, 4
 
 .text
 
@@ -66,10 +77,24 @@
 		dec %esi  # off by one 
 		std  # change direction
 		lodsb  # skip over newline
+		movl %ecx, ConversionLength
 
 	convertInt:
+		movl $0x0, %eax
 		lodsb   # into %al
 		dec %ecx
+		movl Conversion, %ebx
+		sub $0x30, %eax  # bring 0x37 down to 7
+		imul PowerOfTen, %eax 
+		addl %ebx, %eax
+		push %eax
+
+		movl PowerOfTen, %ebx
+		imul $10, %ebx, %ebx
+		movl %ebx, PowerOfTen
+		
+		pop %eax
+		movl %eax, Conversion
 		cmp $0x0, %ecx
 		jnz convertInt 
 
@@ -83,7 +108,7 @@
                 movl $1, %ebx
                 movl $HelloWorld, %ecx
                 movl $lenHelloWorld, %edx
-                int $0x80
+                int $0x80		
 
 		# Quit
                 movl $1, %eax
