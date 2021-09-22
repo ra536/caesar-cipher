@@ -10,9 +10,6 @@
 	# shift key prompt
 	# shift key prompt length
 	
-	LiterallyTen:
-		.int 10
-
 	PowerOfTen:
 		.int 0x1
 
@@ -26,6 +23,7 @@
 	.comm ShiftKeyInteger, 4
 	.comm ShiftKeySize, 4	
 
+	# TODO: Delete
 	.comm ConversionLength, 4
 
 .text
@@ -57,44 +55,78 @@
 		movl $ShiftKeyLength, %edx
 		int $0x80
 			
+		# write system call (TODO: Delete)
 		movl $4, %eax
 		movl $1, %ebx
 		movl $ShiftKeyPointer, %ecx
 		movl $ShiftKeyLength, %edx
 		int $0x80
 		
+		# set up counter and prep %esi for lodsb command
 		movl $0x0, %ecx
 		movl $ShiftKeyPointer, %esi
 	findEnd:
-		lodsb    # into %al
+		# load next byte into %al
+		lodsb
+
+		# if newline, finish execution
 		cmp $0x0a, %al
 		jz done
 		
+		# else, increment size, repeat loop		
 		inc %ecx
 		jmp findEnd 
 
 	done:
-		dec %esi  # off by one 
-		std  # change direction
-		lodsb  # skip over newline
+		# last lodsb left pointer at null character, bring to newline
+		dec %esi  
+
+		# change direction to read digits from lowest order first
+		std  
+		
+		# skip over newline
+		lodsb  
+
+		# store ConversionLength (TODO: Delete)
 		movl %ecx, ConversionLength
 
 	convertInt:
+		# clear out %eax, since lodsb only fills lowest byte
 		movl $0x0, %eax
-		lodsb   # into %al
-		dec %ecx
-		movl Conversion, %ebx
-		sub $0x30, %eax  # bring 0x37 down to 7
-		imul PowerOfTen, %eax 
-		addl %ebx, %eax
-		push %eax
 
+		# load next byte into %al
+		lodsb   
+
+		# decrement counter, since no null character at front
+		dec %ecx
+
+		# load Conversion label into %ebx
+		movl Conversion, %ebx
+
+		# convert ASCII character to corresponding integer
+		sub $0x30, %eax  # e.g. bring 0x37 down to 7
+		
+		# scale up the digit, depending on place value
+		imul PowerOfTen, %eax 
+
+		# add to accumulator
+		addl %ebx, %eax
+
+		# TODO: check if necessary
+		push %eax
+		
+		# multiply assign by 10, save to PowerOfTen label
 		movl PowerOfTen, %ebx
 		imul $10, %ebx, %ebx
 		movl %ebx, PowerOfTen
 		
+		# TODO: check if necessary
 		pop %eax
+
+		# save new accumulated total
 		movl %eax, Conversion
+
+		# if all digits read, continue
 		cmp $0x0, %ecx
 		jnz convertInt 
 
