@@ -88,17 +88,13 @@
 		# includes newline
 		movl %eax, ShiftKeyLength
 			
-		# set up counter and prep %esi for lodsb command
-		movl $0x0, %ecx
-		movl $ShiftKeyPointer, %esi
-
 	stackTest:
 		# Pushing Plaintext to stack
                 pushl $PlaintextLength
                 pushl $PlaintextPointer
 
 		# Pushing ShiftKey stack
-		pushl $ShiftKeyLength
+		pushl ShiftKeyLength
 		pushl $ShiftKeyPointer
 
 		# Store value of EBP on stack
@@ -114,8 +110,6 @@
                 movl 8(%ebp), %edx
 		int $0x80
 
-		# Not sure why, but it prints out both the shift key and plaintext here
-
 		# Print Values  
                 movl $4, %eax
                 movl $1, %ebx
@@ -123,12 +117,9 @@
                 movl 16(%ebp), %edx
                 int $0x80
 
-		# Just prints out plaintext here
-
-		movl %ebp, %esp
-                popl %ebp 
-		
-		#Segmentation fault at line 163: lodsb
+		# set up counter and prep %esi for lodsb command
+		movl $0x0, %ecx
+                movl $ShiftKeyPointer, %esi
 
 	findEnd:
 		# load next byte into %al
