@@ -45,41 +45,41 @@
 		# write system call  
 		movl $4, %eax           	    # syscall for write()
 		movl $1, %ebx  		    	    # File descriptor for std_out 	
-		movl $PlaintextPrompt, %ecx         # moves the address of the string into ecx
-		movl $lenPlaintextPrompt, %edx      # moves the length of the string into edx 
+		movl $PlaintextPrompt, %ecx         # moves the address of the Plaintext Prompt string into ecx
+		movl $lenPlaintextPrompt, %edx      # moves the length of the Plaintext string into edx 
 		int $0x80			    # calls kernel
 
 		# read system call for plaintext
 		# push plaintext to stack
 		movl $3, %eax                     # syscall for read()
 		movl $0x0, %ebx          	  # File descriptor for std_in  	
-		movl $PlaintextPointer, %ecx      # moves the address of the string into ecx
-		movl $PlaintextLength, %edx       # moves the length of the string into edx     
+		movl $PlaintextPointer, %ecx      # moves the address of the PlaintextPointer var into ecx
+		movl $PlaintextLength, %edx       # moves the length of Plaintext var into edx     
 		int $0x80			  # calls kernel	
 
 		# includes newline
-		movl %eax, PlaintextLength         #moves eax's content into variable PlaintextLength in memory
+		movl %eax, PlaintextLength         #moves eax's content into variable PlaintextLength var
   
 		# write system call 
 		movl $4, %eax			 # syscall for write()
 		movl $1, %ebx			 # File descriptor for std_out 
-		movl $ShiftKeyPrompt, %ecx       # moves the address of the string into ecx
-		movl $lenShiftKeyPrompt, %edx    # moves the length of the string into edx
+		movl $ShiftKeyPrompt, %ecx       # moves the address of the ShiftKeyPrompt string into ecx
+		movl $lenShiftKeyPrompt, %edx    # moves the length of the ShiftKeyPrompt string into edx
 		int $0x80                        # calls kernel 
 
 		# read system call for shift key
 		# push shift key to stack
 		movl $3, %eax                  # syscall for read()
 		movl $0x0,  %ebx               # File descriptor for std_in   
-		movl $ShiftKeyPointer, %ecx    #         
-		movl $ShiftKeyLength, %edx
-		int $0x80
+		movl $ShiftKeyPointer, %ecx    # moves the address of the ShiftKeyPointer var into ecx         
+		movl $ShiftKeyLength, %edx     # moves the length of the ShiftKeyPointer var into edx       
+		int $0x80	               # calls kernel
 
 		# includes newline
-		movl %eax, ShiftKeyLength
+		movl %eax, ShiftKeyLength      # moves eax's content into variable ShiftKeyLength var
 			
 		# set up counter and prep %esi for lodsb command
-		movl $0x0, %ecx
+		movl $0x0, %ecx		       
 		movl $ShiftKeyPointer, %esi
 	findEnd:
 		# load next byte into %al
@@ -102,9 +102,6 @@
 		
 		# skip over newline
 		lodsb  
-
-		# store ConversionLength (TODO: Delete)
-		movl %ecx, ConversionLength
 
 	convertInt:
 		# clear out %eax, since lodsb only fills lowest byte
