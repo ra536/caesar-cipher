@@ -78,36 +78,32 @@
 		# includes newline
 		movl %eax, ShiftKeyLength      # moves eax's content into variable ShiftKeyLength var
 			
-		# set up counter and prep %esi for lodsb command
-		movl $0x0, %ecx		       
-		movl $ShiftKeyPointer, %esi
-	findEnd:
-		# load next byte into %al
-		lodsb
-
-		# if newline, finish execution
-		cmp $0x0a, %al
-		jz done
 		
-		# else, increment size, repeat loop		
-		inc %ecx
-		jmp findEnd 
+		movl $0x0, %ecx		       # set up counter 
+		movl $ShiftKeyPointer, %esi    # moves shiftKeyPointer into  %esi, prep for loadsb command	 
+	
+	CountChar:  
+		lodsb				# load next byte into %al register and increments %esi
+				
+		cmp $0x0a, %al   		# compare byte in al register with newline character to see if were at the end of line
+		jz done                         # if comparison yields zero then zero flag set, and then jump to done label 
+		
+   						
+		inc %ecx			# else, increment size of ecx to count the number of character in plaintext	
+		jmp CountChar 			# repeat the loop, until of the string is found
 
 	done:
-		# last lodsb left pointer at null character, bring to newline
-		dec %esi  
+		dec %esi  			# previous lodsb pointer made esi point to a null character, we decrement to go back to newline character
 
-		# change direction to read digits from lowest order first
-		std  
-		
-		# skip over newline
-		lodsb  
+		std  				# change direction to read digits from lowest order first (right to left)
+				
+		lodsb  				# skip over newline
 
 	convertInt:
-		# clear out %eax, since lodsb only fills lowest byte
+						# clear out %eax, since lodsb only fills lowest byte
 		movl $0x0, %eax
 
-		# load next byte into %al
+					# load next byte into %al
 		lodsb   
 
 		# decrement counter, since no null character at front
@@ -117,7 +113,7 @@
 		movl Conversion, %ebx
 
 		# convert ASCII character to corresponding integer
-		sub $0x30, %eax  # e.g. bring 0x37 down to 7
+		sub $0x30, %eax  # e.g. bring 0x37 down to 0x07
 		
 		# scale up the digit, depending on place value
 		imul PowerOfTen, %eax 
@@ -209,7 +205,6 @@
 		int $0x80
 
 		# adjust stack pointer	
-
 
 		# Quit
                 movl $1, %eax
