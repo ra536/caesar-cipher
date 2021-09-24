@@ -1,38 +1,34 @@
 .data
 
-	# plaintext prompt
-	# plaintext prompt length
 	PlaintextPrompt:
-		.asciz "Please enter the plaintext: "
-		lenPlaintextPrompt = .-PlaintextPrompt
-
-	# shift key prompt
-	# shift key prompt length
+		.asciz "Please enter the plaintext: "    # plaintext prompt string
+		lenPlaintextPrompt = .-PlaintextPrompt   # plaintext prompt string length 
+	
 	ShiftKeyPrompt:
-		.asciz "Please enter the shift value: "
-		lenShiftKeyPrompt = .-ShiftKeyPrompt
+		.asciz "Please enter the shift value: "   # shift value pompt string
+		lenShiftKeyPrompt = .-ShiftKeyPrompt      # shift value prompt string length
 	
 	PowerOfTen:
-		.int 0x1
+		.int 0x1  
 
 	Conversion:
 		.int 0x0
 
 .bss
-	.comm PlaintextPointer, 51
-	.comm PlaintextLength, 4	
+	.comm PlaintextPointer, 51        # allocates 51 bytes for plaintext input which is 50 characters + 1 null byte
+	.comm PlaintextLength, 4	  # allocates 4 bytes for  plaintext input's length value.
 
-	.comm ShiftKeyPointer, 4
-	.comm ShiftKeyLength, 4
+	.comm ShiftKeyPointer, 4          #  allocates 4 bytes for shift key number, which can be up to 1000 (decimal)
+	.comm ShiftKeyLength, 4           #  allocates 4 bytes for shift key's length value. 
 
-	.comm CiphertextPointer, 51
-	.comm CiphertextLength, 4
+	.comm CiphertextPointer, 51      # allocates 51 bytes for cipher output which is 50 characters + 1 null byte (maybe needs to 52 bytes)
+	.comm CiphertextLength, 4        # allocates 4 ytes for  cipher output's length value.
 
-	.comm ShiftKeyInteger, 4
-	.comm ShiftKeySize, 4	
+	.comm ShiftKeyInteger, 4        # allocates 4 bytes for the shift key in an integer form
+	.comm ShiftKeySize, 4		# allocates 4 bytes for the shift key's length value.
 
 	# TODO: Delete
-	.comm ConversionLength, 4
+	.comm ConversionLength, 4    
 
 .text
 
@@ -52,30 +48,30 @@
 		ret
 
         _start:
-		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $PlaintextPrompt, %ecx
-		movl $lenPlaintextPrompt, %edx
-		int $0x80
+		# write system call  
+		movl $4, %eax           	    # syscall for write()
+		movl $1, %ebx  		    	    # File descriptor for std_out 	
+		movl $PlaintextPrompt, %ecx         # Stores the address of the string into ecx
+		movl $lenPlaintextPrompt, %edx      # Stores the length of the string into edx 
+		int $0x80			    # calls kernel
 
 		# read system call for plaintext
 		# push plaintext to stack
-		movl $3, %eax
-		movl $0x0, %ebx
-		movl $PlaintextPointer, %ecx
-		movl $PlaintextLength, %edx
-		int $0x80
+		movl $3, %eax                     # syscall for read()
+		movl $0x0, %ebx          	  # File descriptor for std_in  	
+		movl $PlaintextPointer, %ecx      # Stores the address of the string into ecx
+		movl $PlaintextLength, %edx       # Stores the length of the string into edx     
+		int $0x80			  # calls kernel	
 
 		# includes newline
 		movl %eax, PlaintextLength
 
 		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $ShiftKeyPrompt, %ecx
-		movl $lenShiftKeyPrompt, %edx
-		int $0x80
+		movl $4, %eax			 # syscall for write()
+		movl $1, %ebx			 # File descriptor for std_out 
+		movl $ShiftKeyPrompt, %ecx       # Stores the address of the string into ecx
+		movl $lenShiftKeyPrompt, %edx    # Stores the length of the string into edx
+		int $0x80                        # calls kernel 
 
 		# read system call for shift key
 		# push shift key to stack
