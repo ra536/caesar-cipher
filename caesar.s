@@ -82,58 +82,48 @@
 		movl $0x0, %ecx		       # set up counter 
 		movl $ShiftKeyPointer, %esi    # moves shiftKeyPointer into  %esi, prep for loadsb command	 
 	
-	CountChar:  
+	CountShiftKeyDigits:  
 		lodsb				# load next byte into %al register and increments %esi
 				
 		cmp $0x0a, %al   		# compare byte in al register with newline character to see if were at the end of line
 		jz done                         # if comparison yields zero then zero flag set, and then jump to done label 
-		
-   						
+		   						
 		inc %ecx			# else, increment size of ecx to count the number of character in plaintext	
-		jmp CountChar 			# repeat the loop, until of the string is found
+		jmp CountShiftKeyDigits 	# repeat the loop, until all digits are counted
 
 	done:
-		dec %esi  			# previous lodsb pointer made esi point to a null character, we decrement to go back to newline character
+		dec %esi  			# previous lodsb pointer made %esi point to a null character, we decrement to go back to newline character
 
-		std  				# change direction to read digits from lowest order first (right to left)
+		std  				# change direction to read shift key digits from lowest order first (right to left)
 				
-		lodsb  				# skip over newline
+		lodsb  				# by starting right to left we know where to skip over newline, (loads newline character to %al, increments %esi address)
 
 	convertInt:
-						# clear out %eax, since lodsb only fills lowest byte
-		movl $0x0, %eax
-
-					# load next byte into %al
-		lodsb   
-
-		# decrement counter, since no null character at front
-		dec %ecx
-
-		# load Conversion label into %ebx
-		movl Conversion, %ebx
-
-		# convert ASCII character to corresponding integer
-		sub $0x30, %eax  # e.g. bring 0x37 down to 0x07
+						
+		movl $0x0, %eax			# clear out %eax, since new line character was sitting %al (lodsb only fills lowest byte)
+					
+		lodsb   			# load next byte from %esi into %al, and increments %esi address 
 		
-		# scale up the digit, depending on place value
-		imul PowerOfTen, %eax 
+		dec %ecx			# decrement counter for every byte loaded in %al,( no null character at front)
+						
+		movl Conversion, %ebx		# load Conversion label into %ebx (0x0 is load onto %ebx )
 
-		# add to accumulator
-		addl %ebx, %eax
-
-		# TODO: check if necessary
-		push %eax
+						# convert ASCII character to corresponding integer
+		sub $0x30, %eax  		# e.g. bring 0x37 down to 0x07
 		
-		# multiply assign by 10, save to PowerOfTen label
-		movl PowerOfTen, %ebx
+		imul PowerOfTen, %eax 		# scale up the digit, depending on place value
+		
+		addl %ebx, %eax			# add to accumulator
+		
+		push %eax			# TODO: check if necessary push onto stack
+		
+		movl PowerOfTen, %ebx		# multiply assign by 10, save to PowerOfTen label
 		imul $10, %ebx, %ebx
 		movl %ebx, PowerOfTen
 		
-		# TODO: check if necessary
-		pop %eax
-
-		# save new accumulated total
-		movl %eax, Conversion
+		pop %eax		       # TODO: check if necessary
+								
+		movl %eax, Conversion            # save new accumulated total
 
 		# if all digits read, continue
 		cmp $0x0, %ecx
