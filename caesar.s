@@ -98,8 +98,7 @@
 				
 		lodsb  				# by starting right to left we know where to skip over newline, (loads newline character to %al, increments %esi address)
 
-	convertInt:
-						
+	convertInt:				
 		movl $0x0, %eax			# clear out %eax, since new line character was sitting %al (lodsb only fills lowest byte)
 					
 		lodsb   			# load next byte from %esi into %al, and increments %esi address 
@@ -118,7 +117,7 @@
 		push %eax			# TODO: check if necessary push onto stack
 		
 		movl PowerOfTen, %ebx		# multiply assign by 10, save to PowerOfTen label
-		imul $10, %ebx, %ebx
+		imul $10, %ebx
 		movl %ebx, PowerOfTen
 		
 		pop %eax		       # TODO: check if necessary
