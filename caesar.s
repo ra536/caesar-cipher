@@ -24,12 +24,6 @@
 	.comm CiphertextPointer, 51      # allocates 51 bytes for cipher output which is 50 characters + 1 null byte (maybe needs to 52 bytes)
 	.comm CiphertextLength, 4        # allocates 4 ytes for  cipher output's length value.
 
-	.comm ShiftKeyInteger, 4        # allocates 4 bytes for the shift key in an integer form
-	.comm ShiftKeySize, 4		# allocates 4 bytes for the shift key's length value.
-
-	# TODO: Delete
-	.comm ConversionLength, 4    
-
 .text
 
         .globl _start
