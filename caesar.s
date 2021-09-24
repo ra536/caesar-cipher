@@ -15,8 +15,8 @@
 		.int 0x0
 
 .bss
-	.comm PlaintextPointer, 51        # allocates 51 bytes for plaintext input which is 50 characters + 1 null byte
-	.comm PlaintextLength, 4	  # allocates 4 bytes for  plaintext input's length value.
+	.comm PlaintextPointer, 51        # allocates 51 bytes for plaintext which is 50 characters + 1 null byte
+	.comm PlaintextLength, 4	  # allocates 4 bytes for  plaintext's length value.
 
 	.comm ShiftKeyPointer, 4          #  allocates 4 bytes for shift key number, which can be up to 1000 (decimal)
 	.comm ShiftKeyLength, 4           #  allocates 4 bytes for shift key's length value. 
@@ -51,33 +51,33 @@
 		# write system call  
 		movl $4, %eax           	    # syscall for write()
 		movl $1, %ebx  		    	    # File descriptor for std_out 	
-		movl $PlaintextPrompt, %ecx         # Stores the address of the string into ecx
-		movl $lenPlaintextPrompt, %edx      # Stores the length of the string into edx 
+		movl $PlaintextPrompt, %ecx         # moves the address of the string into ecx
+		movl $lenPlaintextPrompt, %edx      # moves the length of the string into edx 
 		int $0x80			    # calls kernel
 
 		# read system call for plaintext
 		# push plaintext to stack
 		movl $3, %eax                     # syscall for read()
 		movl $0x0, %ebx          	  # File descriptor for std_in  	
-		movl $PlaintextPointer, %ecx      # Stores the address of the string into ecx
-		movl $PlaintextLength, %edx       # Stores the length of the string into edx     
+		movl $PlaintextPointer, %ecx      # moves the address of the string into ecx
+		movl $PlaintextLength, %edx       # moves the length of the string into edx     
 		int $0x80			  # calls kernel	
 
 		# includes newline
-		movl %eax, PlaintextLength
-
+		movl %eax, PlaintextLength         #moves eax's content into variable PlaintextLength in memory
+  
 		# write system call 
 		movl $4, %eax			 # syscall for write()
 		movl $1, %ebx			 # File descriptor for std_out 
-		movl $ShiftKeyPrompt, %ecx       # Stores the address of the string into ecx
-		movl $lenShiftKeyPrompt, %edx    # Stores the length of the string into edx
+		movl $ShiftKeyPrompt, %ecx       # moves the address of the string into ecx
+		movl $lenShiftKeyPrompt, %edx    # moves the length of the string into edx
 		int $0x80                        # calls kernel 
 
 		# read system call for shift key
 		# push shift key to stack
-		movl $3, %eax
-		movl $0x0,  %ebx
-		movl $ShiftKeyPointer, %ecx
+		movl $3, %eax                  # syscall for read()
+		movl $0x0,  %ebx               # File descriptor for std_in   
+		movl $ShiftKeyPointer, %ecx    #         
 		movl $ShiftKeyLength, %edx
 		int $0x80
 
