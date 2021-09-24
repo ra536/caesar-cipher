@@ -40,14 +40,54 @@
 	.type CaesarCipher, @function
 
 	CaesarCipher:
-		# find plaintext on stack
-		# find shift key on stack
+		setup:
+			cld				# Clear Flags
 
-		# convert shift key to integer
+			movl 4(%ebp), %ebx		# Conversion number
+			movl 8(%ebp), %esi		# Plaintext
+			movl 12(%ebp), %ecx		# Plaintext Length
+			movl $CiphertextPointer, %edi	# CiphertextPointer
+		
+		modConversion:
+			cmp $26, %ebx
+			jb doneConversion 
+		
+		subConversion:
+			sub $26, %ebx
+			jmp modConversion
 
-		# LOOP (calculate ciphertext)
+		doneConversion:
+			movl %ebx, 4(%ebp)	
 
-		# print ciphertext
+		shiftLoop:
+			movl $0x0, %eax
+			lodsb
+			cmp $0x0a, %al
+			jz doneShift	
+			
+			# compare with space
+			cmp $0x20, %al
+			jz store
+			
+			#SHIFT
+			sub $65, %al
+			add 4(%ebp), %al	
+
+
+		modPlaintext:
+			cmp $26, %al
+			jb donePlaintext 
+		
+		subPlaintext:
+			sub $26, %al
+			jmp modPlaintext
+
+		donePlaintext:
+			add $65, %al
+
+		store:
+			stosb	
+			jmp shiftLoop 
 
 		ret
 
@@ -171,56 +211,9 @@
                 # Make EBP point to top of stack
                 movl %esp, %ebp
 
-	setup:
-		cld
-
-		# call CaesarCipher
-		movl 8(%ebp), %esi
-		movl 12(%ebp), %ecx
-		movl $CiphertextPointer, %edi
-		
-		# bring down Conversion...
-		movl 4(%ebp), %ebx
-	modConversion:
-		cmp $26, %ebx
-		jb doneConversion 
-	
-	subConversion:
-		sub $26, %ebx
-		jmp modConversion
-
-	doneConversion:
-		movl %ebx, 4(%ebp)	
-
-	shiftLoop:
-		movl $0x0, %eax
-		lodsb
-		cmp $0x0a, %al
-		jz doneShift	
-		
-		# compare with space
-		cmp $0x20, %al
-		jz store
-		
-		#SHIFT
-		sub $65, %al
-		add 4(%ebp), %al	
-
-
-	modPlaintext:
-		cmp $26, %al
-		jb donePlaintext 
-	
-	subPlaintext:
-		sub $26, %al
-		jmp modPlaintext
-
-	donePlaintext:
-		add $65, %al
-		
-	store:
-		stosb	
-		jmp shiftLoop 
+	callCaesarCipher:
+		# Call the Caesar Cipher funtion
+		call CaesarCipher
 
 	doneShift:
 		movl %ecx, CiphertextLength
