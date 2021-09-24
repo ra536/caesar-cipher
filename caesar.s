@@ -88,35 +88,6 @@
 		# includes newline
 		movl %eax, ShiftKeyLength
 			
-	stackTest:
-		# Pushing Plaintext to stack
-                pushl $PlaintextLength
-                pushl $PlaintextPointer
-
-		# Pushing ShiftKey stack
-		pushl ShiftKeyLength
-		pushl $ShiftKeyPointer
-
-		# Store value of EBP on stack
-		pushl %ebp
-		
-		# Make EBP point to top of stack
-		movl %esp, %ebp
-
-		# Print Values	
-		movl $4, %eax
-                movl $1, %ebx
-                movl 4(%ebp), %ecx	#Shift value
-                movl 8(%ebp), %edx
-		int $0x80
-
-		# Print Values  
-                movl $4, %eax
-                movl $1, %ebx
-                movl 12(%ebp), %ecx	#Plaintext Value
-                movl 16(%ebp), %edx
-                int $0x80
-
 		# set up counter and prep %esi for lodsb command
 		movl $0x0, %ecx
                 movl $ShiftKeyPointer, %esi
@@ -186,16 +157,30 @@
 		cmp $0x0, %ecx
 		jnz convertInt 
 
+	pushStack:
+                # Pushing Plaintext to stack
+                pushl PlaintextLength
+                pushl $PlaintextPointer
+
+                # Pushing Conversiont to stack
+                pushl Conversion
+
+                # Store value of EBP on stack
+                pushl %ebp
+
+                # Make EBP point to top of stack
+                movl %esp, %ebp
+
 	setup:
 		cld
 
 		# call CaesarCipher
-		movl $PlaintextPointer, %esi
-		movl PlaintextLength, %ecx
+		movl 8(%ebp), %esi
+		movl 12(%ebp), %ecx
 		movl $CiphertextPointer, %edi
 		
 		# bring down Conversion...
-		movl Conversion, %ebx
+		movl 4(%ebp), %ebx
 	modConversion:
 		cmp $26, %ebx
 		jb doneConversion 
@@ -205,7 +190,7 @@
 		jmp modConversion
 
 	doneConversion:
-		movl %ebx, Conversion	
+		movl %ebx, 4(%ebp)	
 
 	shiftLoop:
 		movl $0x0, %eax
@@ -213,15 +198,13 @@
 		cmp $0x0a, %al
 		jz doneShift	
 		
-		# inc %ecx
-		
 		# compare with space
 		cmp $0x20, %al
 		jz store
 		
 		#SHIFT
 		sub $65, %al
-		add Conversion, %al	
+		add 4(%ebp), %al	
 
 
 	modPlaintext:
