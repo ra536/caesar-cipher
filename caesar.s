@@ -40,12 +40,20 @@
 	.type CaesarCipher, @function
 
 	CaesarCipher:
+
+		pointers:
+			# Store value of EBP on stack
+                	pushl %ebp
+
+                	# Make EBP point to top of stack
+                	movl %esp, %ebp		
+
 		setup:
 			cld				# Clear Flags
 
-			movl 4(%ebp), %ebx		# Conversion number
-			movl 8(%ebp), %esi		# Plaintext
-			movl 12(%ebp), %ecx		# Plaintext Length
+			movl 8(%ebp), %ebx		# Conversion number
+			movl 12(%ebp), %esi		# Plaintext
+			movl 16(%ebp), %ecx		# Plaintext Length
 			movl $CiphertextPointer, %edi	# CiphertextPointer
 		
 		modConversion:
@@ -89,7 +97,10 @@
 			stosb	
 			jmp shiftLoop 
 
-		ret
+		return:
+			movl %ebp, %esp         # Restore the old value of ESP
+                	popl %ebp               # Restore the old value of EBP
+			ret
 
         _start:
 		# write system call 
@@ -205,12 +216,6 @@
                 # Pushing Conversiont to stack
                 pushl Conversion
 
-                # Store value of EBP on stack
-                pushl %ebp
-
-                # Make EBP point to top of stack
-                movl %esp, %ebp
-
 	callCaesarCipher:
 		# Call the Caesar Cipher funtion
 		call CaesarCipher
@@ -227,8 +232,8 @@
 		movl CiphertextLength, %edx
 		int $0x80
 
-		# adjust stack pointer	
-
+		# adjust the stack pointer
+                addl $12, %esp
 
 		# Quit
                 movl $1, %eax
