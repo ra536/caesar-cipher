@@ -99,7 +99,7 @@
 		lodsb  				# by starting right to left we know where to skip over newline, (loads newline character to %al, increments %esi address)
 
 	convertShiftKeyToInt:				
-		movl $0x0, %eax			# clear out %eax, since new line character was sitting %al (lodsb only fills lowest byte)
+		movl $0x0, %eax			# clear out %eax, since new line character was in %al reg (lodsb only fills lowest byte)
 					
 		lodsb   			# load next byte from %esi into %al, and increments %esi address 
 		
