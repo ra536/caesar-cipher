@@ -129,7 +129,7 @@
 		jnz convertShiftKeyToInt 	# if compare z flag is not set then loop again
 
 	setup:
-		cld
+		cld				   # Clear Flags	
 						
 		# call CaesarCipher
 		movl $PlaintextPointer, %esi       # load address of Plaintext into  %esi  
