@@ -53,7 +53,7 @@
 
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
-			movl 16(%ebp), %ecx		# Plaintext Length
+			movl 16(%ebp), %ecx		# Plaintext Length 
 			movl $CiphertextPointer, %edi	# CiphertextPointer
 		
 		modConversion:
@@ -167,7 +167,7 @@
 
 		# store ConversionLength (TODO: Delete)
 		movl %ecx, ConversionLength
-
+	
 	convertInt:
 		# clear out %eax, since lodsb only fills lowest byte
 		movl $0x0, %eax
@@ -210,7 +210,7 @@
 
 	pushStack:
                 # Pushing Plaintext to stack
-                pushl PlaintextLength
+                pushl $PlaintextLength
                 pushl $PlaintextPointer
 
                 # Pushing Conversiont to stack
