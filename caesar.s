@@ -85,7 +85,7 @@
 	CountShiftKeyDigits:  
 		lodsb				# load next byte into %al register and increments %esi
 				
-		cmp $0x0a, %al   		# compare byte in al register with newline character to see if were at the end of line
+		cmp $0x0a, %al   		# compare byte in %al register with newline character to see if were at the end of line
 		jz done                         # if comparison yields zero then zero flag set, and then jump to done label 
 		   						
 		inc %ecx			# else, increment size of ecx to count the number of character in plaintext	
@@ -105,97 +105,95 @@
 		
 		dec %ecx			# decrement counter for every byte loaded in %al,( no null character at front)
 						
-		movl Conversion, %ebx		# load Conversion label into %ebx (0x0 is load onto %ebx )
+		movl Conversion, %ebx		# load Conversion label into %ebx (0x0 is first load onto %ebx, then previously saved Conversion )
 
 						# convert ASCII character to corresponding integer
 		sub $0x30, %eax  		# e.g. bring 0x37 down to 0x07
 		
 		imul PowerOfTen, %eax 		# scale up the digit, depending on place value
 		
-		addl %ebx, %eax			# add to accumulator
-		
+		addl %ebx, %eax			# add to the next digit to accumulator
+						# (first loop adds ones, next loops add tens, next loop add hundreds group)
+						
 		push %eax			# TODO: check if necessary push onto stack
 		
 		movl PowerOfTen, %ebx		# multiply assign by 10, save to PowerOfTen label
 		imul $10, %ebx
 		movl %ebx, PowerOfTen
 		
-		pop %eax		       # TODO: check if necessary
+		pop %eax		        # TODO: check if necessary
 								
-		movl %eax, Conversion            # save new accumulated total
+		movl %eax, Conversion           # save new value in Conversion var in memory
 
-						# if all digits read, continue
-		cmp $0x0, %ecx
-		jnz convertShiftKeyToInt 
+		cmp $0x0, %ecx			# once ecx is decrement to zero then all digits have been read, continue
+		jnz convertShiftKeyToInt 	# if compare z flag is not set then loop again
 
 	setup:
 		cld
-
+						
 		# call CaesarCipher
-		movl $PlaintextPointer, %esi
-		movl PlaintextLength, %ecx
-		movl $CiphertextPointer, %edi
+		movl $PlaintextPointer, %esi       # load address of Plaintext into  %esi  
+		movl PlaintextLength, %ecx	   # load length of Plaintext into  %ecx 
+		movl $CiphertextPointer, %edi      # load address of Ciphertext into  %esi  
 		
 		# bring down Conversion...
-		movl Conversion, %ebx
+		movl Conversion, %ebx              # Conversion holds the shift key value in hex
 	modConversion:
-		cmp $26, %ebx
-		jb doneConversion 
+		cmp $26, %ebx			   # Compare by subtracting 26 - %ebx(shiftKeyValue) (result is not stored)
+		jb doneConversion 		   # if the %ebx(shiftKeyValue) is less than 26 then jump to doneConversion	
 	
 	subConversion:
-		sub $26, %ebx
-		jmp modConversion
+		sub $26, %ebx			   # subtracts 26 from %ebx(shiftKeyValue) and save it in %ebx
+		jmp modConversion		   # jmps back to modConversion to check if less than 26, if not will come down to repeat subConversion
 
 	doneConversion:
-		movl %ebx, Conversion	
+		movl %ebx, Conversion		   # stores the modded %ebx(shiftKeyValue) value back to Conversion 	
 
 	shiftLoop:
-		movl $0x0, %eax
-		lodsb
-		cmp $0x0a, %al
-		jz doneShift	
-		
-		# inc %ecx
-		
-		# compare with space
-		cmp $0x20, %al
-		jz store
+		movl $0x0, %eax			   # reset %eax to zero 
+		lodsb				   # loads byte from %esi(PlaintextPointer) into %al  (still reading right to left)	
+		cmp $0x0a, %al			   # compare byte in %al register with newline character to see if were at the end of line
+		jz doneShift		           #  if zflag set jumpto doneShift 
+						
+		# inc %ecx			  # increment the %ecx value as we have increment the letter	
+				
+		cmp $0x20, %al			  # compare with space char 
+		jz store			  # if %al is space char then zflag is set and jump to store the space char 	
 		
 		#SHIFT
-		sub $65, %al
-		add Conversion, %al	
-
+		sub $65, %al			  # subtract 65 from the %al register to set to zero
+		add Conversion, %al		  # add the shift value to the %al register
 
 	modPlaintext:
-		cmp $26, %al
-		jb donePlaintext 
+		cmp $26, %al			 # compare by doing 26 - %al(one byte) 	
+		jb donePlaintext 		 # if the %al(plainText letter) is less than 26 then jump to donePlaintext	
 	
 	subPlaintext:
-		sub $26, %al
-		jmp modPlaintext
+		sub $26, %al 			 # subtract %al - 26 and store value in %al
+		jmp modPlaintext		 # jmp to modPlaintext
 
-	donePlaintext:
-		add $65, %al
+	donePlaintext:	
+		add $65, %al			 # add 65 to %al reg to be able to convert into ascii to print on screen
 		
 	store:
-		stosb	
-		jmp shiftLoop 
+		stosb				 # store the char character from %al register into memory %edi (Ciphertext)
+		jmp shiftLoop 			 # restart the loop for the next char
 
 	doneShift:
-		movl %ecx, CiphertextLength
-		mov $0x0a, %al
-		stosb
+		movl %ecx, CiphertextLength	  # store the %ecx char count into  CiphertextLength
+		mov $0x0a, %al		          # mov a new line char to reg eax
+		stosb				  # store the char character from %al register into memory %edi (Ciphertext)
 		
-		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $CiphertextPointer, %ecx
-		movl CiphertextLength, %edx
-		int $0x80
+		# write system call          
+		movl $4, %eax     		   # syscall for write()
+		movl $1, %ebx			   # File descriptor for std_out 
+		movl $CiphertextPointer, %ecx	   # moves the address of the CiphertextPointer string into %ecx
+		movl CiphertextLength, %edx 	   # moves the length of CiphertextLength var into %edx     
+		int $0x80			   # calls kernel	
 
 		# adjust stack pointer	
 
-		# Quit
-                movl $1, %eax
-                movl $0, %ebx
-                int $0x80
+		# Exit
+                movl $1, %eax			  # sys_exit	  	
+                movl $0, %ebx			  
+                int $0x80			  # calls kernel	
