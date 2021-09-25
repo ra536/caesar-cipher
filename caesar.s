@@ -114,8 +114,6 @@
 		convertInt:
 			std       	# change direction to read digits from lowest order first
 
-			lodsb           # skip over newline
-
 			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
 
 			lodsb             # load next byte into %al from %esi
