@@ -210,7 +210,7 @@
 
 	pushStack:
                 # Pushing Plaintext to stack
-                pushl $PlaintextLength
+                pushl PlaintextLength
                 pushl $PlaintextPointer
 
                 # Pushing Conversiont to stack
