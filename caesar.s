@@ -135,7 +135,7 @@
 			cmp $0x0, %ecx            # if all digits read, continue
 			jnz convertInt
 
-		return:
+		return2:
 			movl %ebp, %esp         # Restore the old value of ESP
 			popl %ebp               # Restore the old value of EBP
 			ret
