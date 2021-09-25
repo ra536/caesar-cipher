@@ -199,7 +199,7 @@
 	
 	pushStringShiftKeyToStack:
 		pushl NumofDigits 
-		pushl $ShiftkeyPointer
+		pushl $ShiftKeyPointer
 		
 	callStringShiftKeytoInt:
 		call StringShiftKeytoInt
