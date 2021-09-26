@@ -104,16 +104,31 @@
 	StringShiftKeytoInt: 
 	
 		StackSetup: 
-			push %ebp 
+		       push %ebp 
 
-			movl %esp, %ebp
-                        
-			movl 8(%ebp), %esi    # ShiftkeyPointer
-			movl 12(%ebp), %ecx   # NumofDigits
-		
-		       
+		       movl %esp, %ebp
+                       
+		       movl 8(%ebp), %esi    # ShiftkeyPointer
+
+	             # set up counter an prep %esi for lodsb command
+	               movl $0x0, %ecx	       
+           
+	   countShiftKeyDigits:
+			# load next byte into %al
+			lodsb
+
+			# if reached to newline, finish execution
+			cmp $0x0a, %al
+			jz ESI_Setup
+			
+			# else, increment size, repeat loop		
+			inc %ecx
+			jmp countShiftKeyDigits 
+					
+		ESI_Setup:
+		       dec %esi
            	       std   # changes direction to read digits from lowest order first
-		       
+
 		       lodsb #skip over new line
 
 	        convertInt:
@@ -175,32 +190,9 @@
 
 		# includes newline
 		movl %eax, ShiftKeyLength
-			
-		# set up counter an prep %esi for lodsb command
-		movl $0x0, %ecx
-                movl $ShiftKeyPointer, %esi
-
-	countShiftKeyDigits:
-		# load next byte into %al
-		lodsb
-
-		# if reached to newline, finish execution
-		cmp $0x0a, %al
-		jz saveNumofDigits
-		
-		# else, increment size, repeat loop		
-		inc %ecx
-		jmp countShiftKeyDigits 
-
-	saveNumofDigits:       
-		# store NumofDigits of the ShiftKey value
-		movl %ecx, NumofDigits
-	
+				
 	pushStringShiftKeyToStack:
-		pushl NumofDigits     
- 		dec %esi           #decremented esi because previous esi pointed to null. We moved to point at new line
-		push %esi          #holds the ShiftKeyPointer
-		#pushl $ShiftKeyPointer  # having trouble implementing this way.
+		pushl $ShiftKeyPointer
 		
 	callStringShiftKeytoInt:
 		call StringShiftKeytoInt
