@@ -197,10 +197,10 @@
 		movl %ecx, NumofDigits
 	
 	pushStringShiftKeyToStack:
-		pushl NumofDigits
-		dec %esi
-		push %esi
-		#pushl $ShiftKeyPointer
+		pushl NumofDigits     
+ 		dec %esi           #decremented esi because previous esi pointed to null. We moved to point at new line
+		push %esi          #holds the ShiftKeyPointer
+		#pushl $ShiftKeyPointer  # having trouble implementing this way.
 		
 	callStringShiftKeytoInt:
 		call StringShiftKeytoInt
