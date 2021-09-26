@@ -100,35 +100,37 @@
 
 
 	.type StringShiftKeytoInt, @function
-	
+
 	StringShiftKeytoInt: 
 	
 		StackSetup: 
 			push %ebp 
 
 			movl %esp, %ebp
-
+                        
 			movl 8(%ebp), %esi    # ShiftkeyPointer
 			movl 12(%ebp), %ecx   # NumofDigits
+		
+		       
+           	       std   # changes direction to read digits from lowest order first
+		       
+		       lodsb #skip over new line
 
-		convertInt:
-			std       	# change direction to read digits from lowest order first
-
+	        convertInt:
 			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
-
+			
 			lodsb             # load next byte into %al from %esi
-			dec %ecx           # decrement counter
+			
+                        dec %ecx           # decrement counter
 
-			movl Conversion, %ebx    # load Conversion label into %ebx
-
-			sub $0x30,%eax           # convert ASCII character to corresponding integer in hex
+			sub $0x30,%eax         # convert ASCII character to corresponding integer in hex
 
 			imul PowerOfTen, %eax    # scale up the digit, depending on place value in hex
-
+			
 			addl %eax, Conversion       #adds on the next hundreds,tens, ones group
 
 			imul $10, PowerOfTen, %ebx     # multiply PowerOfTen by factor of 10, save to PowerOfTen label
-			movl %ebx, PowerOfTen      
+		        movl %ebx, PowerOfTen	      
 
 			cmp $0x0, %ecx            # if all digits read, continue
 			jnz convertInt
@@ -165,7 +167,6 @@
 		int $0x80
 
 		# read system call for shift key
-		# push shift key to stack
 		movl $3, %eax
 		movl $0x0,  %ebx
 		movl $ShiftKeyPointer, %ecx
@@ -175,7 +176,7 @@
 		# includes newline
 		movl %eax, ShiftKeyLength
 			
-		# set up counter and prep %esi for lodsb command
+		# set up counter an prep %esi for lodsb command
 		movl $0x0, %ecx
                 movl $ShiftKeyPointer, %esi
 
@@ -191,13 +192,15 @@
 		inc %ecx
 		jmp countShiftKeyDigits 
 
-	saveNumofDigits:
+	saveNumofDigits:       
 		# store NumofDigits of the ShiftKey value
 		movl %ecx, NumofDigits
 	
 	pushStringShiftKeyToStack:
-		pushl NumofDigits 
-		pushl $ShiftKeyPointer
+		pushl NumofDigits
+		dec %esi
+		push %esi
+		#pushl $ShiftKeyPointer
 		
 	callStringShiftKeytoInt:
 		call StringShiftKeytoInt
