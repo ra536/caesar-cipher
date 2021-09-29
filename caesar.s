@@ -19,20 +19,14 @@
 		.int 0x0
 
 .bss
-	.comm PlaintextPointer, 51
+	.comm Plaintext, 51
 	.comm PlaintextLength, 4	
 
-	.comm ShiftKeyPointer, 4
+	.comm ShiftKey, 4
 	.comm ShiftKeyLength, 4
 
-	.comm CiphertextPointer, 51
+	.comm Ciphertext, 51
 	.comm CiphertextLength, 4
-
-	.comm ShiftKeyInteger, 4
-	.comm ShiftKeySize, 4	
-
-	# TODO: Delete
-	.comm ConversionLength, 4
 
 .text
 
@@ -49,23 +43,17 @@
                 	movl %esp, %ebp		
 
 		setup:
-			cld				# Clear Flags
-
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
-			movl 16(%ebp), %ecx		# Plaintext Length
-			movl $CiphertextPointer, %edi	# CiphertextPointer
+			movl $Ciphertext, %edi	# Ciphertext
 		
 		modConversion:
 			cmp $26, %ebx
-			jb doneConversion 
+			jb shiftLoop 
 		
 		subConversion:
 			sub $26, %ebx
 			jmp modConversion
-
-		doneConversion:
-			movl %ebx, 8(%ebp)	
 
 		shiftLoop:
 			movl $0x0, %eax
@@ -79,7 +67,7 @@
 			
 			#SHIFT
 			sub $65, %al
-			add 8(%ebp), %al	
+			add %bl, %al	
 
 
 		modPlaintext:
@@ -98,8 +86,71 @@
 			jmp shiftLoop 
 
 		return:
+			mov $0x0a, %al
+			stosb
+
 			movl %ebp, %esp         # Restore the old value of ESP
                 	popl %ebp               # Restore the old value of EBP
+			ret
+
+
+	.type StringShiftKeytoInt, @function
+
+	StringShiftKeytoInt: 
+	
+		StackSetup: 
+		       push %ebp 
+
+		       movl %esp, %ebp
+                       
+		       movl 8(%ebp), %esi    # Shiftkey
+
+	             # set up counter an prep %esi for lodsb command
+	               movl $0x0, %ecx	       
+           
+	   countShiftKeyDigits:
+			# load next byte into %al
+			lodsb
+
+			# if reached to newline, finish execution
+			cmp $0x0a, %al
+			jz locateLastDigit
+			
+			# else, increment size, repeat loop		
+			inc %ecx
+			jmp countShiftKeyDigits 
+					
+		locateLastDigit:
+           	        std   # changes direction to read digits from lowest order first
+
+			lodsb  #skip over null character
+		        lodsb  #skip over new line
+
+	        convertInt:
+			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
+			
+			lodsb             # load next byte into %al from %esi
+			
+                        dec %ecx           # decrement counter
+
+			sub $0x30,%eax         # convert ASCII character to corresponding integer in hex
+
+			imul PowerOfTen, %eax    # scale up the digit, depending on place value in hex
+			
+			addl %eax, Conversion       #adds on the next hundreds,tens, ones group
+
+			imul $10, PowerOfTen, %ebx     # multiply PowerOfTen by factor of 10, save to PowerOfTen label
+		        movl %ebx, PowerOfTen	      
+
+			cmp $0x0, %ecx            # if all digits read, continue
+			jnz convertInt
+		
+		
+			cld				# Clear Flags
+
+		return2:
+			movl %ebp, %esp         # Restore the old value of ESP
+			popl %ebp               # Restore the old value of EBP
 			ret
 
         _start:
@@ -114,7 +165,7 @@
 		# push plaintext to stack
 		movl $3, %eax
 		movl $0x0, %ebx
-		movl $PlaintextPointer, %ecx
+		movl $Plaintext, %ecx
 		movl $PlaintextLength, %edx
 		int $0x80
 
@@ -129,111 +180,42 @@
 		int $0x80
 
 		# read system call for shift key
-		# push shift key to stack
 		movl $3, %eax
 		movl $0x0,  %ebx
-		movl $ShiftKeyPointer, %ecx
+		movl $ShiftKey, %ecx
 		movl $ShiftKeyLength, %edx
 		int $0x80
 
 		# includes newline
 		movl %eax, ShiftKeyLength
-			
-		# set up counter and prep %esi for lodsb command
-		movl $0x0, %ecx
-                movl $ShiftKeyPointer, %esi
-
-	findEnd:
-		# load next byte into %al
-		lodsb
-
-		# if newline, finish execution
-		cmp $0x0a, %al
-		jz done
 		
-		# else, increment size, repeat loop		
-		inc %ecx
-		jmp findEnd 
+	callStringShiftKeytoInt:
+		pushl $ShiftKey
 
-	done:
-		# last lodsb left pointer at null character, bring to newline
-		dec %esi  
+		call StringShiftKeytoInt
 
-		# change direction to read digits from lowest order first
-		std  
+		addl $4, %esp
 		
-		# skip over newline
-		lodsb  
-
-		# store ConversionLength (TODO: Delete)
-		movl %ecx, ConversionLength
-
-	convertInt:
-		# clear out %eax, since lodsb only fills lowest byte
-		movl $0x0, %eax
-
-		# load next byte into %al
-		lodsb   
-
-		# decrement counter, since no null character at front
-		dec %ecx
-
-		# load Conversion label into %ebx
-		movl Conversion, %ebx
-
-		# convert ASCII character to corresponding integer
-		sub $0x30, %eax  # e.g. bring 0x37 down to 7
-		
-		# scale up the digit, depending on place value
-		imul PowerOfTen, %eax 
-
-		# add to accumulator
-		addl %ebx, %eax
-
-		# TODO: check if necessary
-		push %eax
-		
-		# multiply assign by 10, save to PowerOfTen label
-		movl PowerOfTen, %ebx
-		imul $10, %ebx, %ebx
-		movl %ebx, PowerOfTen
-		
-		# TODO: check if necessary
-		pop %eax
-
-		# save new accumulated total
-		movl %eax, Conversion
-
-		# if all digits read, continue
-		cmp $0x0, %ecx
-		jnz convertInt 
-
-	pushStack:
+	callCaesarCipher:
                 # Pushing Plaintext to stack
-                pushl PlaintextLength
-                pushl $PlaintextPointer
+                pushl $Plaintext
 
-                # Pushing Conversiont to stack
+                # Pushing Conversion to stack
                 pushl Conversion
 
-	callCaesarCipher:
 		# Call the Caesar Cipher funtion
 		call CaesarCipher
 
-	doneShift:
-		movl %ecx, CiphertextLength
-		mov $0x0a, %al
-		stosb
-		
+		# adjust the stack pointer
+                addl $8, %esp
+
+	finish:
 		# write system call 
 		movl $4, %eax
 		movl $1, %ebx
-		movl $CiphertextPointer, %ecx
-		movl CiphertextLength, %edx
+		movl $Ciphertext, %ecx
+		movl PlaintextLength, %edx
 		int $0x80
-
-		# adjust the stack pointer
-                addl $12, %esp
 
 		# Quit
                 movl $1, %eax
