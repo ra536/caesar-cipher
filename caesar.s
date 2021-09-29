@@ -217,7 +217,7 @@
 		int $0x80
 
 		# adjust the stack pointer
-                addl $12, %esp
+                addl $8, %esp
 
 		# Quit
                 movl $1, %eax
