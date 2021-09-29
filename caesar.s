@@ -19,13 +19,13 @@
 		.int 0x0
 
 .bss
-	.comm PlaintextPointer, 51
+	.comm Plaintext, 51
 	.comm PlaintextLength, 4	
 
-	.comm ShiftKeyPointer, 4
+	.comm ShiftKey, 4
 	.comm ShiftKeyLength, 4
 
-	.comm CiphertextPointer, 51
+	.comm Ciphertext, 51
 	.comm CiphertextLength, 4
 
 	.comm NumofDigits, 4
@@ -50,7 +50,7 @@
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
 			movl 16(%ebp), %ecx		# Plaintext Length 
-			movl $CiphertextPointer, %edi	# CiphertextPointer
+			movl $Ciphertext, %edi	# Ciphertext
 		
 		modConversion:
 			cmp $26, %ebx
@@ -108,7 +108,7 @@
 
 		       movl %esp, %ebp
                        
-		       movl 8(%ebp), %esi    # ShiftkeyPointer
+		       movl 8(%ebp), %esi    # Shiftkey
 
 	             # set up counter an prep %esi for lodsb command
 	               movl $0x0, %ecx	       
@@ -167,7 +167,7 @@
 		# push plaintext to stack
 		movl $3, %eax
 		movl $0x0, %ebx
-		movl $PlaintextPointer, %ecx
+		movl $Plaintext, %ecx
 		movl $PlaintextLength, %edx
 		int $0x80
 
@@ -184,7 +184,7 @@
 		# read system call for shift key
 		movl $3, %eax
 		movl $0x0,  %ebx
-		movl $ShiftKeyPointer, %ecx
+		movl $ShiftKey, %ecx
 		movl $ShiftKeyLength, %edx
 		int $0x80
 
@@ -192,7 +192,7 @@
 		movl %eax, ShiftKeyLength
 				
 	pushStringShiftKeyToStack:
-		pushl $ShiftKeyPointer
+		pushl $ShiftKey
 		
 	callStringShiftKeytoInt:
 		call StringShiftKeytoInt
@@ -200,9 +200,9 @@
 	pushPlainTextToStack:
                 # Pushing Plaintext to stack
                 pushl PlaintextLength
-                pushl $PlaintextPointer
+                pushl $Plaintext
 
-                # Pushing Conversiont to stack
+                # Pushing Conversion to stack
                 pushl Conversion
 
 	callCaesarCipher:
@@ -217,7 +217,7 @@
 		# write system call 
 		movl $4, %eax
 		movl $1, %ebx
-		movl $CiphertextPointer, %ecx
+		movl $Ciphertext, %ecx
 		movl CiphertextLength, %edx
 		int $0x80
 
