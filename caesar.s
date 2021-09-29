@@ -91,6 +91,9 @@
 			jmp shiftLoop 
 
 		return:
+			mov $0x0a, %al
+			stosb
+
 			movl %ebp, %esp         # Restore the old value of ESP
                 	popl %ebp               # Restore the old value of EBP
 			ret
@@ -187,37 +190,34 @@
 
 		# includes newline
 		movl %eax, ShiftKeyLength
-				
-	pushStringShiftKeyToStack:
-		pushl $ShiftKey
 		
 	callStringShiftKeytoInt:
+		pushl $ShiftKey
+
 		call StringShiftKeytoInt
+
+		addl $4, %esp
 		
-	pushPlainTextToStack:
+	callCaesarCipher:
                 # Pushing Plaintext to stack
                 pushl $Plaintext
 
                 # Pushing Conversion to stack
                 pushl Conversion
 
-	callCaesarCipher:
 		# Call the Caesar Cipher funtion
 		call CaesarCipher
 
-	doneShift:
-		mov $0x0a, %al
-		stosb
-		
+		# adjust the stack pointer
+                addl $8, %esp
+
+	finish:
 		# write system call 
 		movl $4, %eax
 		movl $1, %ebx
 		movl $Ciphertext, %ecx
 		movl PlaintextLength, %edx
 		int $0x80
-
-		# adjust the stack pointer
-                addl $8, %esp
 
 		# Quit
                 movl $1, %eax
