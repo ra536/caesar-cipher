@@ -114,17 +114,17 @@
 
 			# if reached to newline, finish execution
 			cmp $0x0a, %al
-			jz ESI_Setup
+			jz locateLastDigit
 			
 			# else, increment size, repeat loop		
 			inc %ecx
 			jmp countShiftKeyDigits 
 					
-		ESI_Setup:
-		       dec %esi
-           	       std   # changes direction to read digits from lowest order first
+		locateLastDigit:
+           	        std   # changes direction to read digits from lowest order first
 
-		       lodsb #skip over new line
+			lodsb  #skip over null character
+		        lodsb  #skip over new line
 
 	        convertInt:
 			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
