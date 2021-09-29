@@ -65,13 +65,13 @@
 			jmp modConversion
 
 		doneConversion:
-			movl %ebx, 4(%ebp)	
+			movl %ebx, 8(%ebp)	
 
 		shiftLoop:
 			movl $0x0, %eax
 			lodsb
 			cmp $0x0a, %al
-			jz doneShift	
+			jz return	
 			
 			# compare with space
 			cmp $0x20, %al
@@ -79,7 +79,7 @@
 			
 			#SHIFT
 			sub $65, %al
-			add 4(%ebp), %al	
+			add 8(%ebp), %al	
 
 
 		modPlaintext:
