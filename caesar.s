@@ -51,14 +51,11 @@
 		
 		modConversion:
 			cmp $26, %ebx
-			jb doneConversion 
+			jb shiftLoop 
 		
 		subConversion:
 			sub $26, %ebx
 			jmp modConversion
-
-		doneConversion:
-			movl %ebx, 8(%ebp)	
 
 		shiftLoop:
 			movl $0x0, %eax
@@ -72,7 +69,7 @@
 			
 			#SHIFT
 			sub $65, %al
-			add 8(%ebp), %al	
+			add %bl, %al	
 
 
 		modPlaintext:
