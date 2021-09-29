@@ -43,8 +43,6 @@
                 	movl %esp, %ebp		
 
 		setup:
-			cld				# Clear Flags
-
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
 			movl $Ciphertext, %edi	# Ciphertext
@@ -146,6 +144,9 @@
 
 			cmp $0x0, %ecx            # if all digits read, continue
 			jnz convertInt
+		
+		
+			cld				# Clear Flags
 
 		return2:
 			movl %ebp, %esp         # Restore the old value of ESP
