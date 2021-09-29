@@ -28,11 +28,7 @@
 	.comm CiphertextPointer, 51
 	.comm CiphertextLength, 4
 
-	.comm ShiftKeyInteger, 4
-	.comm ShiftKeySize, 4	
-
-	# TODO: Delete
-	.comm ConversionLength, 4
+	.comm NumofDigits, 4
 
 .text
 
@@ -53,7 +49,7 @@
 
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
-			movl 16(%ebp), %ecx		# Plaintext Length
+			movl 16(%ebp), %ecx		# Plaintext Length 
 			movl $CiphertextPointer, %edi	# CiphertextPointer
 		
 		modConversion:
@@ -102,6 +98,63 @@
                 	popl %ebp               # Restore the old value of EBP
 			ret
 
+
+	.type StringShiftKeytoInt, @function
+
+	StringShiftKeytoInt: 
+	
+		StackSetup: 
+		       push %ebp 
+
+		       movl %esp, %ebp
+                       
+		       movl 8(%ebp), %esi    # ShiftkeyPointer
+
+	             # set up counter an prep %esi for lodsb command
+	               movl $0x0, %ecx	       
+           
+	   countShiftKeyDigits:
+			# load next byte into %al
+			lodsb
+
+			# if reached to newline, finish execution
+			cmp $0x0a, %al
+			jz ESI_Setup
+			
+			# else, increment size, repeat loop		
+			inc %ecx
+			jmp countShiftKeyDigits 
+					
+		ESI_Setup:
+		       dec %esi
+           	       std   # changes direction to read digits from lowest order first
+
+		       lodsb #skip over new line
+
+	        convertInt:
+			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
+			
+			lodsb             # load next byte into %al from %esi
+			
+                        dec %ecx           # decrement counter
+
+			sub $0x30,%eax         # convert ASCII character to corresponding integer in hex
+
+			imul PowerOfTen, %eax    # scale up the digit, depending on place value in hex
+			
+			addl %eax, Conversion       #adds on the next hundreds,tens, ones group
+
+			imul $10, PowerOfTen, %ebx     # multiply PowerOfTen by factor of 10, save to PowerOfTen label
+		        movl %ebx, PowerOfTen	      
+
+			cmp $0x0, %ecx            # if all digits read, continue
+			jnz convertInt
+
+		return2:
+			movl %ebp, %esp         # Restore the old value of ESP
+			popl %ebp               # Restore the old value of EBP
+			ret
+
         _start:
 		# write system call 
 		movl $4, %eax
@@ -129,7 +182,6 @@
 		int $0x80
 
 		# read system call for shift key
-		# push shift key to stack
 		movl $3, %eax
 		movl $0x0,  %ebx
 		movl $ShiftKeyPointer, %ecx
@@ -138,77 +190,14 @@
 
 		# includes newline
 		movl %eax, ShiftKeyLength
-			
-		# set up counter and prep %esi for lodsb command
-		movl $0x0, %ecx
-                movl $ShiftKeyPointer, %esi
-
-	findEnd:
-		# load next byte into %al
-		lodsb
-
-		# if newline, finish execution
-		cmp $0x0a, %al
-		jz done
+				
+	pushStringShiftKeyToStack:
+		pushl $ShiftKeyPointer
 		
-		# else, increment size, repeat loop		
-		inc %ecx
-		jmp findEnd 
-
-	done:
-		# last lodsb left pointer at null character, bring to newline
-		dec %esi  
-
-		# change direction to read digits from lowest order first
-		std  
+	callStringShiftKeytoInt:
+		call StringShiftKeytoInt
 		
-		# skip over newline
-		lodsb  
-
-		# store ConversionLength (TODO: Delete)
-		movl %ecx, ConversionLength
-
-	convertInt:
-		# clear out %eax, since lodsb only fills lowest byte
-		movl $0x0, %eax
-
-		# load next byte into %al
-		lodsb   
-
-		# decrement counter, since no null character at front
-		dec %ecx
-
-		# load Conversion label into %ebx
-		movl Conversion, %ebx
-
-		# convert ASCII character to corresponding integer
-		sub $0x30, %eax  # e.g. bring 0x37 down to 7
-		
-		# scale up the digit, depending on place value
-		imul PowerOfTen, %eax 
-
-		# add to accumulator
-		addl %ebx, %eax
-
-		# TODO: check if necessary
-		push %eax
-		
-		# multiply assign by 10, save to PowerOfTen label
-		movl PowerOfTen, %ebx
-		imul $10, %ebx, %ebx
-		movl %ebx, PowerOfTen
-		
-		# TODO: check if necessary
-		pop %eax
-
-		# save new accumulated total
-		movl %eax, Conversion
-
-		# if all digits read, continue
-		cmp $0x0, %ecx
-		jnz convertInt 
-
-	pushStack:
+	pushPlainTextToStack:
                 # Pushing Plaintext to stack
                 pushl PlaintextLength
                 pushl $PlaintextPointer
