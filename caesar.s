@@ -28,8 +28,6 @@
 	.comm Ciphertext, 51
 	.comm CiphertextLength, 4
 
-	.comm NumofDigits, 4
-
 .text
 
         .globl _start
@@ -49,7 +47,6 @@
 
 			movl 8(%ebp), %ebx		# Conversion number
 			movl 12(%ebp), %esi		# Plaintext
-			movl 16(%ebp), %ecx		# Plaintext Length 
 			movl $Ciphertext, %edi	# Ciphertext
 		
 		modConversion:
@@ -199,7 +196,6 @@
 		
 	pushPlainTextToStack:
                 # Pushing Plaintext to stack
-                pushl PlaintextLength
                 pushl $Plaintext
 
                 # Pushing Conversion to stack
@@ -210,7 +206,6 @@
 		call CaesarCipher
 
 	doneShift:
-		movl %ecx, CiphertextLength
 		mov $0x0a, %al
 		stosb
 		
@@ -218,7 +213,7 @@
 		movl $4, %eax
 		movl $1, %ebx
 		movl $Ciphertext, %ecx
-		movl CiphertextLength, %edx
+		movl PlaintextLength, %edx
 		int $0x80
 
 		# adjust the stack pointer
