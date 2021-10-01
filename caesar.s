@@ -166,7 +166,7 @@
 		movl $3, %eax
 		movl $0x0, %ebx
 		movl $Plaintext, %ecx
-		movl $PlaintextLength, %edx
+		movl $51, %edx
 		int $0x80
 
 		# includes newline
@@ -183,7 +183,7 @@
 		movl $3, %eax
 		movl $0x0,  %ebx
 		movl $ShiftKey, %ecx
-		movl $ShiftKeyLength, %edx
+		movl $4, %edx
 		int $0x80
 
 		# includes newline
