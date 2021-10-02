@@ -151,7 +151,7 @@
 		movl $51, %edx			    # moves the length of Plaintext var into edx 
 		int $0x80			    # calls kernel
 		
-		movl %eax, PlaintextLength          # includes newline (Unclear how a newline is included)
+		movl %eax, PlaintextLength          # total length of input (input + newline)
 
 		# write system call 		    
 		movl $4, %eax			    # syscall for write() 
@@ -167,14 +167,14 @@
 		movl $4, %edx			    # moves the length of the ShiftKeyPointer var into edx
 		int $0x80			    # calls kernel
 
-		movl %eax, ShiftKeyLength           # includes newline (Unclear how a newline is included)
+		movl %eax, ShiftKeyLength           # total length of input (input + newline)
 		
 	callStringShiftKeytoInt:
 		pushl $ShiftKey                      # passes the ShfitKey value to the stack
 		
 		call StringShiftKeytoInt  	     # calls the function to convert the string ShiftKey value to an hexadecimal value
 
-		addl $4, %esp			     # adjust the stack pointer
+		addl $4, %esp			     # adjust the stack pointer, since $ShiftKey was pushed to stack
 		
 	callCaesarCipher:
                 pushl $Plaintext		     # Pushing Plaintext to stack
@@ -183,7 +183,7 @@
 
 		call CaesarCipher	             # Call the Caesar Cipher funtion
 
-                addl $8, %esp			    # adjust the stack pointer
+                addl $8, %esp			    # adjust the stack pointer, since $Plaintext Conversion was pushed to stack
 
 	finish:
 		# write system call 
