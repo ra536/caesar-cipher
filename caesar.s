@@ -54,7 +54,7 @@
 
 		shiftLoop:
 			movl $0x0, %eax				# reset %eax to zero 
-			lodsb					# loads byte from %esi(PlaintextPointer) into %al  (still reading right to left)	
+			lodsb					# loads character byte from %esi(PlaintextPointer) into %al register to do shift operation	
 			cmp $0x0a, %al				# compare byte in %al register with newline character to see if were at the end of line
 			jz return				# if we are at the end of line then we finish shifting
 			
