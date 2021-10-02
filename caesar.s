@@ -75,7 +75,7 @@
 			jmp modPlaintext		      # jump to modPlaintext to compare again
 
 		donePlaintext:
-			add $65, %al			      # translates the value back to ASCII format by add 65 
+			add $65, %al			      # translates the value back to ASCII format by adding 65 
 
 		store:
 			stosb				 # stores the letter from %al register into memory %edi (Ciphertext memory location) 
