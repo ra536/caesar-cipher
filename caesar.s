@@ -183,7 +183,7 @@
 
 		call CaesarCipher	             # Call the Caesar Cipher funtion
 
-                addl $8, %esp			    # adjust the stack pointer, since $Plaintext Conversion was pushed to stack
+                addl $8, %esp			    # adjust the stack pointer, since $Plaintext and Conversion was pushed to stack
 
 	finish:
 		# write system call 
