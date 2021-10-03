@@ -3,28 +3,28 @@
 	
 	PlaintextPrompt:
 		.asciz "Please enter the plaintext: "        # plaintext prompt string
-		lenPlaintextPrompt = .-PlaintextPrompt	     # plaintext prompt length
+		lenPlaintextPrompt = .-PlaintextPrompt	     # plaintext prompt string length
 
 	
 	ShiftKeyPrompt:
 		.asciz "Please enter the shift value: "	     # shift key prompt string
 		lenShiftKeyPrompt = .-ShiftKeyPrompt	     # shift key prompt string length
 	
-	PowerOfTen:					     # This PowerOfTen var will be used to upscale the digits from ones to tens to hundreds group
+	PowerOfTen:					     # integer that represents place value for shift key conversion
 		.int 0x1   				    
 
-	Conversion:					    # This Conversion var will hold the translated ASCII number in hexadecimal format
+	Conversion:					    # integer that will hold the calculated numerical value of the shift key string 
 		.int 0x0		
 
 .bss	
-	.comm Plaintext, 51				    # allocates 51 bytes for plaintext which is 50 characters + 1 null byte
-	.comm PlaintextLength, 4			    # allocates 4 bytes for plaintext length value of 51
+	.comm Plaintext, 52				    # plaintext string, which can be at most 50 characters + 1 newline + 1 null byte
+	.comm PlaintextLength, 4			    # plaintext string length (4 bytes chosen to match register size, although 1 byte would be sufficient)
 
-	.comm ShiftKey, 4				    # allocates 4 bytes for shift key number which is inputted in ASCII format.
-	.comm ShiftKeyLength, 4				    # allocates 4 bytes for shift key's length value up 1000 
+	.comm ShiftKey, 5				    # shift key string, which can be at most 3 digits + 1 newline + 1 null byte
+	.comm ShiftKeyLength, 4				    # shift key string length (4 bytes chosen to match register size, although 2 bytes would be sufficient)
 
-	.comm Ciphertext, 51				   # allocates 51 bytes for cipher output which is 50 characters + 1 null byte (ASCII format)
-	.comm CiphertextLength, 4			   # allocates 4 ytes for cipher output's length value of 51
+	.comm Ciphertext, 52				    # ciphertext string, which can be at most 50 characters + 1 newline + 1 null byte
+							    # no need for keep track of ciphertext length, since it is the same as the plaintext length
 
 .text
 
@@ -33,13 +33,13 @@
 
 	CaesarCipher:
 		pointers:			
-                	pushl %ebp				# Store value of EBP on stack				
-                	movl %esp, %ebp				# Make EBP point to top of stack
+                	pushl %ebp				# save existing value of EBP on the stack				
+                	movl %esp, %ebp				# make EBP point to top of the stack
 
 		setup:
-			movl 8(%ebp), %ebx			# Conversion number
-			movl 12(%ebp), %esi			# Plaintext
-			movl $Ciphertext, %edi			# Ciphertext
+			movl 8(%ebp), %ebx			# load Conversion into EBX
+			movl 12(%ebp), %esi			# load Plaintext into ESI, for use with lodsb instruction
+			movl $Ciphertext, %edi			# load Ciphertext into EDI, for use with stosb instruction
 		
 		modConversion:
 			cmp $26, %ebx 				# check if the shiftKey number is less than 26. 
