@@ -1,32 +1,30 @@
 .data
 
-	# plaintext prompt
-	# plaintext prompt length
-	PlaintextPrompt:
-		.asciz "Please enter the plaintext: "
-		lenPlaintextPrompt = .-PlaintextPrompt
-
-	# shift key prompt
-	# shift key prompt length
-	ShiftKeyPrompt:
-		.asciz "Please enter the shift value: "
-		lenShiftKeyPrompt = .-ShiftKeyPrompt
 	
-	PowerOfTen:
-		.int 0x1
+	PlaintextPrompt:
+		.asciz "Please enter the plaintext: "        # plaintext prompt string
+		lenPlaintextPrompt = .-PlaintextPrompt	     # plaintext prompt string length
 
-	Conversion:
-		.int 0x0
+	
+	ShiftKeyPrompt:
+		.asciz "Please enter the shift value: "	     # shift key prompt string
+		lenShiftKeyPrompt = .-ShiftKeyPrompt	     # shift key prompt string length
+	
+	PowerOfTen:					     # integer that represents place value for shift key conversion
+		.int 0x1   				    
 
-.bss
-	.comm Plaintext, 51
-	.comm PlaintextLength, 4	
+	Conversion:					     # integer that will hold the calculated numerical value of the shift key string 
+		.int 0x0		
 
-	.comm ShiftKey, 4
-	.comm ShiftKeyLength, 4
+.bss	
+	.comm Plaintext, 52				    # plaintext string, which can be at most 50 characters + 1 newline + 1 null byte
+	.comm PlaintextLength, 4			    # plaintext string length (4 bytes chosen to match register size, although 1 byte would be sufficient)
 
-	.comm Ciphertext, 51
-	.comm CiphertextLength, 4
+	.comm ShiftKey, 5				    # shift key string, which can be at most 3 digits + 1 newline + 1 null byte
+	.comm ShiftKeyLength, 4				    # shift key string length (4 bytes chosen to match register size, although 2 bytes would be sufficient)
+
+	.comm Ciphertext, 52				    # ciphertext string, which can be at most 50 characters + 1 newline + 1 null byte
+							    # no need for keep track of ciphertext length, since it is the same as the plaintext length
 
 .text
 
@@ -34,190 +32,170 @@
 	.type CaesarCipher, @function
 
 	CaesarCipher:
-
-		pointers:
-			# Store value of EBP on stack
-                	pushl %ebp
-
-                	# Make EBP point to top of stack
-                	movl %esp, %ebp		
+		pointers:			
+                	pushl %ebp				# save existing value of EBP on the stack				
+                	movl %esp, %ebp				# make EBP point to top of the stack
 
 		setup:
-			movl 8(%ebp), %ebx		# Conversion number
-			movl 12(%ebp), %esi		# Plaintext
-			movl $Ciphertext, %edi	# Ciphertext
+			movl 8(%ebp), %ebx			# load Conversion into EBX
+			movl 12(%ebp), %esi			# load Plaintext into ESI, for use with lodsb instruction
+			movl $Ciphertext, %edi			# load Ciphertext into EDI, for use with stosb instruction
 		
 		modConversion:
-			cmp $26, %ebx
-			jb shiftLoop 
-		
+			cmp $26, %ebx 				# compare the shift key to 26
+			jb shiftLoop 				# if is less than 26, skip to shifting step, since within modulo 26 range (0-25) 
+
 		subConversion:
-			sub $26, %ebx
-			jmp modConversion
+			sub $26, %ebx				# else, subtract 26 from the shift key 
+			jmp modConversion			# repeat the process until shift key is less than 26 
 
 		shiftLoop:
-			movl $0x0, %eax
-			lodsb
-			cmp $0x0a, %al
-			jz return	
+			movl $0x0, %eax				# zero out EAX, since lodsb will only modify the last byte (AL) 
+			lodsb					# load next character byte from the Plaintext into AL	
 			
-			# compare with space
-			cmp $0x20, %al
-			jz store
+			cmp $0x0a, %al				# if the next character is a newline character,
+			jz return				# we have reached the end of the plaintext, skip to return step
 			
-			#SHIFT
-			sub $65, %al
-			add %bl, %al	
+			cmp $0x20, %al		                # if it is a space character, 
+			jz store			        # do not perform shifting, and instead jump to storing the character 
+			
+			sub $65, %al                            # else, subtract 65 to bring the capital ASCII letter within the modulo 26 range (0-25) 
+			add %bl, %al			        # add the shift key value to plaintext letter to shift the letter
 
+								# the reason for doing the modulo of both the shift key and plaintext letter was so that
+								# BL could be directly added to AL (else, shift values above 255 would not work properly) 
 
 		modPlaintext:
-			cmp $26, %al
-			jb donePlaintext 
+			cmp $26, %al			        # compare the shifted plaintext to 26
+			jb donePlaintext 		        # if is within modulo 26 (0-25) bounds, jump to translate back to ASCII format
 		
 		subPlaintext:
-			sub $26, %al
-			jmp modPlaintext
+			sub $26, %al				# else, subtract 26 
+			jmp modPlaintext			# and repeat the process 
 
 		donePlaintext:
-			add $65, %al
+			add $65, %al				# translates the value back to ASCII format by adding 65
 
 		store:
-			stosb	
-			jmp shiftLoop 
+			stosb					# stores the newly shifted ASCII letter in AL into Ciphertext
+			jmp shiftLoop    			# continue the process for the next character in the word
 
 		return:
-			mov $0x0a, %al
-			stosb
+			mov $0x0a, %al				# append a newline, 
+			stosb					# since storing does not occur for the newline character
 
-			movl %ebp, %esp         # Restore the old value of ESP
-                	popl %ebp               # Restore the old value of EBP
-			ret
+			movl %ebp, %esp         		# restore the old value of ESP
+                	popl %ebp              			# restore the old value of EBP from the stack
+			ret					# return from function
 
 
 	.type StringShiftKeytoInt, @function
 
-	StringShiftKeytoInt: 
-	
+	StringShiftKeytoInt: 	
 		StackSetup: 
-		       push %ebp 
-
-		       movl %esp, %ebp
-                       
-		       movl 8(%ebp), %esi    # Shiftkey
-
-	             # set up counter an prep %esi for lodsb command
-	               movl $0x0, %ecx	       
-           
+		       push %ebp 			  # save existing value of EBP on the stack
+		       movl %esp, %ebp			  # Make EBP point to the top of the stack                     
+		       movl 8(%ebp), %esi    	          # load ShiftKey string into ESI
+	               movl $0x0, %ecx			  # set up digit counter for ShiftKey value
+	                      
 	   countShiftKeyDigits:
-			# load next byte into %al
-			lodsb
-
-			# if reached to newline, finish execution
-			cmp $0x0a, %al
-			jz locateLastDigit
-			
-			# else, increment size, repeat loop		
-			inc %ecx
-			jmp countShiftKeyDigits 
+			lodsb				# load next byte of the ShiftKey into AL
+							
+			cmp $0x0a, %al			# if reached to newline, 
+			jz locateLastDigit		# finish counting and jump to conversion step
+							
+			inc %ecx			# else, increment the counter
+			jmp countShiftKeyDigits		# and repeat the loop	 
 					
 		locateLastDigit:
-           	        std   # changes direction to read digits from lowest order first
+           	        std  				# sets direction flag to read digits from lowest order byte first
 
-			lodsb  #skip over null character
-		        lodsb  #skip over new line
+			lodsb  				# skip over null character, since the last lodsb left pointer at a null character
+		        lodsb  				# skip over newline character
 
 	        convertInt:
-			movl $0x0, %eax   # clear out %eax, since lodsb only fills lowest byte
+			movl $0x0, %eax   	        # clear out EAX, since lodsb only fills lowest order byte
 			
-			lodsb             # load next byte into %al from %esi
+			lodsb            	        # load next ASCII character into AL 
 			
-                        dec %ecx           # decrement counter
+                        dec %ecx        	        # decrement counter
 
-			sub $0x30,%eax         # convert ASCII character to corresponding integer in hex
+			sub $0x30, %eax        		# convert ASCII character to corresponding integer
 
-			imul PowerOfTen, %eax    # scale up the digit, depending on place value in hex
+			imul PowerOfTen, %eax           # scale up the digit, depending on place value (initially 1, for one's place) 
 			
-			addl %eax, Conversion       #adds on the next hundreds,tens, ones group
+			addl %eax, Conversion           # add value to running Conversion total
 
-			imul $10, PowerOfTen, %ebx     # multiply PowerOfTen by factor of 10, save to PowerOfTen label
-		        movl %ebx, PowerOfTen	      
+			imul $10, PowerOfTen, %ebx      # multiplies PowerOfTen by factor of 10, 
+		        movl %ebx, PowerOfTen	        # and saves to PowerOfTen 
 
-			cmp $0x0, %ecx            # if all digits read, continue
-			jnz convertInt
+			cmp $0x0, %ecx                  # if all digits read stop converting (fall through)
+			jnz convertInt			# else, continue looping for the next digit
 		
-		
-			cld				# Clear Flags
+			cld				# clear direction flag
 
 		return2:
-			movl %ebp, %esp         # Restore the old value of ESP
-			popl %ebp               # Restore the old value of EBP
-			ret
+			movl %ebp, %esp         # restore the old value of ESP
+			popl %ebp               # restore the old value of EBP
+			ret			# return from function
 
         _start:
-		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $PlaintextPrompt, %ecx
-		movl $lenPlaintextPrompt, %edx
-		int $0x80
+		# write system call for plaintext prompt 
+		movl $4, %eax			     # syscall for write()
+		movl $1, %ebx			     # file descriptor for std_out 
+		movl $PlaintextPrompt, %ecx          # load the PlaintextPrompt string
+		movl $lenPlaintextPrompt, %edx	     # load length of the PlaintextPrompt string
+		int $0x80			     # calls kernel interrupt
 
 		# read system call for plaintext
-		# push plaintext to stack
-		movl $3, %eax
-		movl $0x0, %ebx
-		movl $Plaintext, %ecx
-		movl $51, %edx
-		int $0x80
+		movl $3, %eax			    # syscall for read()
+		movl $0x0, %ebx			    # file descriptor for std_in  
+		movl $Plaintext, %ecx		    # load the Plaintext
+		movl $52, %edx			    # load 52 for plaintext length (PlaintextLength CANNOT be used, since uninitialized) 
+		int $0x80			    # calls kernel interrupt
+		
+		movl %eax, PlaintextLength          # read call returns total length of input (user input + newline)
 
-		# includes newline
-		movl %eax, PlaintextLength
-
-		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $ShiftKeyPrompt, %ecx
-		movl $lenShiftKeyPrompt, %edx
-		int $0x80
+		# write system call for shift key prompt 		    
+		movl $4, %eax			    # syscall for write() 
+		movl $1, %ebx			    # file descriptor for std_out
+		movl $ShiftKeyPrompt, %ecx          # load the ShiftKeyPrompt string 
+		movl $lenShiftKeyPrompt, %edx       # load length of the ShiftKeyPrompt string 
+		int $0x80			    # calls kernel interrupt 
 
 		# read system call for shift key
-		movl $3, %eax
-		movl $0x0,  %ebx
-		movl $ShiftKey, %ecx
-		movl $4, %edx
-		int $0x80
+		movl $3, %eax			    # syscall for read()
+		movl $0x0,  %ebx		    # file descriptor for std_in 
+		movl $ShiftKey, %ecx		    # load the ShiftKey
+		movl $5, %edx			    # load 5 for shift key length (ShiftKeyLength CANNOT be used, since uninitialized)
+		int $0x80			    # calls kernel interrupt
 
-		# includes newline
-		movl %eax, ShiftKeyLength
+		movl %eax, ShiftKeyLength           # read call returns total length of input (user input + newline)
 		
 	callStringShiftKeytoInt:
-		pushl $ShiftKey
+		pushl $ShiftKey                      # saves ShiftKey to the stack
+		
+		call StringShiftKeytoInt  	     # calls function to convert the ShiftKey string value to an integer value
 
-		call StringShiftKeytoInt
-
-		addl $4, %esp
+		addl $4, %esp			     # adjust the stack pointer, since ShiftKey was pushed to the stack
 		
 	callCaesarCipher:
-                # Pushing Plaintext to stack
-                pushl $Plaintext
+                pushl $Plaintext		     # pushing Plaintext to stack
+                pushl Conversion 	             # pushing Conversion to stack
 
-                # Pushing Conversion to stack
-                pushl Conversion
+		call CaesarCipher	             # call function to perform caesar cipher
 
-		# Call the Caesar Cipher funtion
-		call CaesarCipher
-
-		# adjust the stack pointer
-                addl $8, %esp
+                addl $8, %esp			     # adjust the stack pointer, since Plaintext and Conversion were pushed to the stack
 
 	finish:
-		# write system call 
-		movl $4, %eax
-		movl $1, %ebx
-		movl $Ciphertext, %ecx
-		movl PlaintextLength, %edx
-		int $0x80
+		# write system call for ciphertext 
+		movl $4, %eax			   # syscall for write() 
+		movl $1, %ebx			   # file descriptor for std_out
+		movl $Ciphertext, %ecx		   # load Ciphertext 
+		movl PlaintextLength, %edx         # load PlaintextLength (since plaintext is the same size as ciphertext)
+		int $0x80			   # calls kernel interrupt		
 
 		# Quit
-                movl $1, %eax
-                movl $0, %ebx
-                int $0x80
+                movl $1, %eax			# sys_exit
+                movl $0, %ebx			# return value of 0
+                int $0x80			# calls kernel interrupt	
