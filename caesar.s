@@ -24,7 +24,7 @@
 	.comm ShiftKeyLength, 4				    # shift key string length (4 bytes chosen to match register size, although 2 bytes would be sufficient)
 
 	.comm Ciphertext, 52				    # ciphertext string, which can be at most 50 characters + 1 newline + 1 null byte
-							    # no need for keep track of ciphertext length, since it is the same as the plaintext length
+							    # no need to keep track of ciphertext length, since it is the same as the plaintext length
 
 .text
 
