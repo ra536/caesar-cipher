@@ -13,7 +13,7 @@
 	PowerOfTen:					     # integer that represents place value for shift key conversion
 		.int 0x1   				    
 
-	Conversion:					    # integer that will hold the calculated numerical value of the shift key string 
+	Conversion:					     # integer that will hold the calculated numerical value of the shift key string 
 		.int 0x0		
 
 .bss	
@@ -42,48 +42,50 @@
 			movl $Ciphertext, %edi			# load Ciphertext into EDI, for use with stosb instruction
 		
 		modConversion:
-			cmp $26, %ebx 				# check if the shiftKey number is less than 26. 
-			jb shiftLoop 				# if the shiftKey number is less than 26 then we found the modulo 26 of the ShiftKey number 
-								# now we can start the shift operation
+			cmp $26, %ebx 				# compare the shift key to 26
+			jb shiftLoop 				# if is less than 26, skip to shifting step, since within modulo 26 range (0-25) 
+
 		subConversion:
-			sub $26, %ebx				# if the shiftKey number is larger than 26 we repeately subtract 26 
-			jmp modConversion			# and compare the shiftKey number until we find modulo 26 of the ShiftKey number
+			sub $26, %ebx				# else, subtract 26 from the shift key 
+			jmp modConversion			# repeat the process until shift key is less than 26 
 
 		shiftLoop:
-			movl $0x0, %eax				# reset %eax to zero 
-			lodsb					# loads character byte from %esi(PlaintextPointer) into %al register to start shift operation	
+			movl $0x0, %eax				# zero out EAX, since lodsb will only modify the last byte (AL) 
+			lodsb					# load next character byte from the Plaintext into AL	
 			
-			cmp $0x0a, %al				# compares byte in %al register with newline character to see if at the end of line
-			jz return				# if we are at the end of line then we finish shifting
+			cmp $0x0a, %al				# if the next character is a newline character,
+			jz return				# we have reached the end of the plaintext, skip to return step
 			
-			cmp $0x20, %al		               # compares with space char 
-			jz store			       # if it space char then store the space char and do not shift it
+			cmp $0x20, %al		                # if it is a space character, 
+			jz store			        # do not perform shifting, and instead jump to storing the character 
 			
-			#SHIFT
-			sub $65, %al                          # else, subtract 65 from the %al register to scale down ASCII letter to alphabet (0-25) range
-			add %bl, %al			      # add the shiftkey value to plaintext letter to shift the letter
+			sub $65, %al                            # else, subtract 65 to bring the capital ASCII letter within the modulo 26 range (0-25) 
+			add %bl, %al			        # add the shift key value to plaintext letter to shift the letter
+
+								# the reason for doing the modulo of both the shift key and plaintext letter was so that
+								# BL could be directly added to AL (else, shift values above 255 would not work properly) 
 
 		modPlaintext:
-			cmp $26, %al			       # compare to check if the newly shifted value is within the bounds of the alphabet (0-25) range
-			jb donePlaintext 		       # if is within bounds jump to donePlainText to translate back to ASCII format
+			cmp $26, %al			        # compare the shifted plaintext to 26
+			jb donePlaintext 		        # if is within modulo 26 (0-25) bounds, jump to translate back to ASCII format
 		
 		subPlaintext:
-			sub $26, %al			      # substract 26 if the newly shifted value is greater then bounds of the alphabet values (0-25)
-			jmp modPlaintext		      # jump to modPlaintext to compare again
+			sub $26, %al				# else, subtract 26 
+			jmp modPlaintext			# and repeat the process 
 
 		donePlaintext:
-			add $65, %al			      # translates the value back to ASCII format by adding 65 
+			add $65, %al				# translates the value back to ASCII format by adding 65
 
 		store:
-			stosb				 # stores the ASCII letter from %al register into memory %edi (Ciphertext memory location) 
-			jmp shiftLoop    		 # restart the loop for the next letter in word
+			stosb					# stores the newly shifted ASCII letter in AL into Ciphertext
+			jmp shiftLoop    			# continue the process for the next character in the word
 
 		return:
-			mov $0x0a, %al			# moves a newline character in al% to later store it in the %edi (Ciphertext memory location)
-			stosb
+			mov $0x0a, %al				# append a newline, 
+			stosb					# since storing does not occur for the newline character
 
-			movl %ebp, %esp         # Restore the old value of ESP
-                	popl %ebp               # Restore the old value of EBP
+			movl %ebp, %esp         		# restore the old value of ESP
+                	popl %ebp              			# restore the old value of EBP from the stack
 			ret
 
 
@@ -91,8 +93,8 @@
 
 	StringShiftKeytoInt: 	
 		StackSetup: 
-		       push %ebp 			  # pushes %ebp on the stack
-		       movl %esp, %ebp			  # Make EBP point to top of stack                     
+		       push %ebp 			  # save existing value of EBP on the stack
+		       movl %esp, %ebp			  # Make EBP point to the top of the stack                     
 		       movl 8(%ebp), %esi    	          # Shiftkey's value in ASCII is stored in %esi
 	               movl $0x0, %ecx			  # set up digit counter for ShiftKey value
 	                      
